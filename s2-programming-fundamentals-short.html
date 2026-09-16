@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Programming Fundamentals in 60s — Short</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    background:#fdfdfb;color:#1c1a17;
+    font-family:Helvetica,Arial,sans-serif;
+    height:100dvh;overflow:hidden;
+  }
+  button{cursor:pointer;border-radius:6px;padding:12px 18px;font-weight:600;font-size:15px;border:1px solid transparent}
+  .primary{background:#1c1a17;color:#fff}
+  .ghost{background:#fff;color:#1c1a17;border-color:#c9c7c2}
+  /* Fullscreen portrait slide */
+  .phone{
+    position:relative;width:100vw;height:100dvh;
+    max-width:calc(100dvh * 9 / 16);margin:0 auto;
+    background:#fdfdfb;overflow:hidden;
+    border-left:1px solid #e0ded9;border-right:1px solid #e0ded9;
+  }
+  @media (max-aspect-ratio: 9/16) {
+    .phone{max-width:100vw;border:0}
+  }
+  .overlay{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:max(14px, env(safe-area-inset-top)) 18px max(16px, env(safe-area-inset-bottom))}
+  .topbar{display:flex;flex-direction:column;gap:10px}
+  .segs{display:flex;gap:5px}
+  .seg{flex:1;height:3px;background:#e0ded9;border-radius:2px;overflow:hidden;cursor:pointer}
+  .seg > div{height:100%;width:0%;background:#1c1a17}
+  .timerrow{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#6b6f76}
+  .stage{flex:1;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;text-align:left;padding:12px 4px;gap:3vh}
+  #main{width:100%;transition:opacity .2s ease}
+  #main.fade{opacity:0}
+  .slide-title{font-size:clamp(13px,1.8vh,17px);font-weight:600;letter-spacing:.08em;color:#6b6f76;text-transform:uppercase;border-bottom:1px solid #e0ded9;padding-bottom:10px;margin-bottom:2.5vh}
+  .slide-h{font-size:clamp(38px,7.5vh,76px);font-weight:700;line-height:1.08;color:#1c1a17}
+  .slide-sub{font-size:clamp(15px,2.4vh,22px);color:#555;margin-top:1.5vh;line-height:1.55}
+  .codecard{width:100%;background:#f4f3f0;border:1px solid #ddd9d3;border-radius:8px;padding:18px;text-align:left;font-family:Menlo,Consolas,monospace;font-size:clamp(19px,3vh,30px);line-height:1.65;color:#1c1a17}
+  .codecard .cm{color:#777;font-size:.65em;font-family:Helvetica,Arial,sans-serif}
+  .k,.v,.s,.f{color:#1c1a17}
+  .err{color:#b3261e}
+  .typegrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}
+  .typecard{background:#f4f3f0;border:1px solid #ddd9d3;color:#1c1a17;border-radius:8px;padding:14px;font-weight:600;font-size:clamp(15px,2.4vh,22px)}
+  .typecard small{display:block;font-weight:400;color:#555;font-family:Menlo,monospace;margin-top:4px;font-size:.8em}
+  .caption{font-size:clamp(15px,2.4vh,22px);color:#333;min-height:1.5em;border-top:1px solid #e0ded9;padding-top:14px;width:100%}
+  .caption b{color:#1c1a17}
+  .controls{display:flex;gap:8px;align-items:center;justify-content:space-between}
+  .navgroup{display:flex;gap:8px}
+  .hint{font-size:11px;color:#888;margin-top:8px}
+</style>
+</head>
+<body>
+
+<div class="phone" id="phone">
+  <div class="overlay">
+    <div class="topbar">
+      <div class="segs" id="segs"></div>
+      <div class="timerrow">
+        <span id="sceneTag">1 / 7</span>
+        <span><span id="time">0:00</span> / 1:00</span>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div id="main"></div>
+      <div class="caption" id="caption"></div>
+    </div>
+
+    <div>
+      <div class="controls">
+        <div class="navgroup">
+          <button class="ghost" onclick="prev()">Prev</button>
+          <button class="ghost" onclick="next()">Next</button>
+        </div>
+        <button class="primary" id="playBtn" onclick="togglePlay()">Play</button>
+      </div>
+      <div class="hint">Space = play/pause · Left/Right = slides</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SCENES = [
+  {tag:'1 / 7', dur:6, cap:'Code is instructions a computer can run.',
+   html:`<div class="slide-title">Programming</div><div class="slide-h">Code =<br>instructions</div><div class="slide-sub">You write steps. The computer runs them.</div>`},
+  {tag:'2 / 7', dur:8, cap:'Programs read in and write out.',
+   html:`<div class="slide-title">In and out</div><div class="codecard"><span class="cm"># output / input</span><br>print("hi")<br>name = input()</div><div class="slide-sub">print shows. input asks.</div>`},
+  {tag:'3 / 7', dur:9, cap:'Two kinds of values: numbers and text.',
+   html:`<div class="slide-title">Values</div><div class="codecard">99 <span class="cm">number</span><br>"99" <span class="cm">text</span></div><div class="slide-sub">Same symbols, different meaning.</div>`},
+  {tag:'4 / 7', dur:9, cap:'Operators do the math.',
+   html:`<div class="slide-title">Operators</div><div class="codecard">+ - * /<br>3 + 4 <span class="cm"># 7</span></div><div class="slide-sub">Plus, minus, times, divide. That's most of it.</div>`},
+  {tag:'5 / 7', dur:10, cap:'If lets the program choose.',
+   html:`<div class="slide-title">Conditions</div><div class="codecard">if score > 90:<br>&nbsp;&nbsp;print("good")</div><div class="slide-sub">If true, run it. If not, skip it.</div>`},
+  {tag:'6 / 7', dur:10, cap:'Loops repeat work for you.',
+   html:`<div class="slide-title">Loops</div><div class="codecard">for i in range(3):<br>&nbsp;&nbsp;print(i)</div><div class="slide-sub">Same step, three times. No copy paste.</div>`},
+  {tag:'7 / 7', dur:8, cap:'Spelling and order matter.',
+   html:`<div class="slide-title">Mistakes</div><div class="codecard">Print("hi") <span class="cm"># fails, small p</span><br>print("hi") <span class="cm"># works</span></div><div class="slide-sub">Exact matters. Read the error.</div>`},
+];
+const TOTAL = SCENES.reduce((a,s)=>a+s.dur,0);
+
+const segsEl=document.getElementById('segs'), main=document.getElementById('main'),
+      cap=document.getElementById('caption'), timeEl=document.getElementById('time'),
+      tagEl=document.getElementById('sceneTag');
+let t=0, playing=false, curIdx=-1, last=performance.now();
+
+function startAt(i){
+  i=Math.max(0,Math.min(SCENES.length-1,i));
+  t=SCENES.slice(0,i).reduce((a,x)=>a+x.dur,0)+.01;
+  render(true);
+}
+SCENES.forEach((s,i)=>{
+  const d=document.createElement('div'); d.className='seg'; d.innerHTML='<div></div>';
+  d.onclick=()=>startAt(i);
+  segsEl.appendChild(d);
+});
+const segFills=[...segsEl.children].map(c=>c.firstChild);
+
+function fmt(s){s=Math.floor(s);return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;}
+function curIndex(){
+  let acc=0, idx=0;
+  for(let i=0;i<SCENES.length;i++){ if(t>=acc+SCENES[i].dur){acc+=SCENES[i].dur;} else {idx=i;break;} if(i===SCENES.length-1) idx=i; }
+  return idx;
+}
+
+function render(force=false){
+  const idx=curIndex(), sc=SCENES[idx];
+  let a2=0;
+  SCENES.forEach((s,i)=>{ const p=Math.min(Math.max((t-a2)/s.dur,0),1); segFills[i].style.width=(p*100)+'%'; a2+=s.dur; });
+  timeEl.textContent=fmt(Math.min(t,TOTAL)); tagEl.textContent=sc.tag;
+  if(idx!==curIdx||force){
+    curIdx=idx;
+    main.classList.add('fade');
+    setTimeout(()=>{
+      main.innerHTML=sc.html; cap.innerHTML=sc.cap;
+      main.classList.remove('fade');
+    }, force ? 0 : 100);
+  }
+}
+
+function setPlayBtn(){
+  const b=document.getElementById('playBtn');
+  b.textContent = (t>=TOTAL) ? 'Replay' : (playing ? 'Pause' : 'Play');
+}
+window.togglePlay=()=>{
+  if(t>=TOTAL && !playing){ t=0; curIdx=-1; }
+  playing=!playing;
+  setPlayBtn();
+  last=performance.now();
+};
+window.next=()=>{ pause(); startAt(curIndex()+1); };
+window.prev=()=>{ pause(); startAt(curIndex()-1); };
+function pause(){ playing=false; setPlayBtn(); last=performance.now(); }
+
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'){ e.preventDefault(); togglePlay(); }
+  if(e.key==='ArrowRight') next();
+  if(e.key==='ArrowLeft') prev();
+});
+
+function loop(now){
+  const dt=(now-last)/1000; last=now;
+  if(playing){
+    t+=dt;
+    if(t>=TOTAL){ t=TOTAL; render(); playing=false; setPlayBtn(); }
+    else render();
+  }
+  requestAnimationFrame(loop);
+}
+render(true); requestAnimationFrame(loop);
+</script>
+</body>
+</html>
